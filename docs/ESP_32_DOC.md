@@ -879,25 +879,10 @@ ESP32 PIN  │  Componente      │  Pin del Componente  │  Color
 
 ---
 
-## Referencias Útiles
+## Referencias
 
 - [Documentación oficial de ESP32](https://docs.espressif.com/)
 - [Librería ESP32Servo](https://github.com/jkb-git/ESP32Servo)
 - [Sensor HC-SR04](https://www.alldatasheet.com/datasheet-pdf/pdf/1132188/ELECTRONICSPICES/HC-SR04.html)
 - [Arduino IDE](https://www.arduino.cc/en/software)
 - [Simulador Wokwi](https://wokwi.com/)
-
----
-
-## Historial de Cambios
-
-| Versión | Fecha | Cambios |
-|---|---|---|
-| 1.0 | 2026-04-09 | Documentación inicial completa con código |
-| - | - | - |
-
----
-
-**Última actualización:** 9 de Abril de 2026  
-**Autor:** Equipo CasaAutomatizada  
-**Licencia:** MIT
