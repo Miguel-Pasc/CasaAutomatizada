@@ -653,54 +653,141 @@ void mostrarAyuda() {
 }
 ```
 
-Interpreta los comandos escritos por el usuario en el monitor serial.
-
-
----
-
-### `procesarComandoBlink()`
-
-Gestiona los comandos relacionados con el parpadeo del LED.
-
-
----
-
-### `procesarComandoAuto()`
-
-Activa o desactiva el modo automático.
-
-
----
-
-### `procesarComandoUmbral()`
-
-Permite modificar el umbral de distancia.
-
-
----
-
-### `mostrarEstado()`
-
-Muestra información completa del estado del sistema.
-
----
-
-### `mostrarDistancia()`
-
-Muestra la distancia actual medida por el sensor.
-
-
----
-
-### `mostrarAyuda()`
-
-Muestra la lista de comandos disponibles.
+Interpreta los comandos escritos por el usuario en el monitor serial. Todos los comandos se convierten a mayúsculas y se procesan en funciones especializadas.
 
 ---
 
 ## Diagrama del Circuito (Wokwi)
 
 > Simulación en Wokwi: [https://wokwi.com/projects/460879044104559617](https://wokwi.com/projects/460879044104559617)
+
+### Diagrama de Conexiones
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                            CIRCUITO COMPLETO                            │
+└─────────────────────────────────────────────────────────────────────────┘
+
+                              ╔════════════════╗
+                              ║    SERVO MOTOR ║
+                              ╠════════════════╣
+                              ║ V+ (5V)  ─────┐│
+                              ║ GND ─────────┐││
+                              ║ PWM (GPIO15) ││
+                              ║              ││
+                              ╚════════════════╝
+                                    ↓
+                                   │││
+                                   │││
+                ┌──────────────────┴┴┴─────────┐
+                │                              │
+              5V ←────────────────────┐        │
+             GND ←────────────────────┼────────┘
+
+
+         ╔══════════════════════════════════════╗
+         ║   PROTOBOARD CONEXIONES              ║
+         ╠══════════════════════════════════════╣
+         ║                                      ║
+         ║  [+] ─────────────────────────────── 5V del ESP32
+         ║  [-] ─────────────────────────────── GND del ESP32
+         ║  [+] ─────────────────────────────── 5V del Sensor
+         ║  [-] ─────────────────────────────── GND del Sensor
+         ║                                      ║
+         ║           ╔════════════════╗         ║
+         ║           ║ HC-SR04 SENSOR ║         ║
+         ║           ╠════════════════╣         ║
+         └──────────→║ VCC (5V) ──────┘         ║
+                     ║ GND ────────────────────┘
+                     ║ TRIG (GPIO 2) ──────────┐
+                     ║ ECHO (GPIO 4) ──────────┤
+                     ║                         │
+                     ╚════════════════╝        │
+                                              │
+                                              ▼
+                                     ┌─────────────┐
+                                     │   ESP32     │
+                                     │   DevKit    │
+                                     │             │
+                                     │  ┌─────┐   │
+                                     │  │ USB │   │
+                                     │  └─────┘   │
+                                     │             │
+                    ╔════════════════════════════╝
+                    ║
+         ┌──────────┴──────────┐
+         │                     │
+        GPIO 2 (TRIG) ────────┐│
+        GPIO 4 (ECHO) ────────┼┤
+        GPIO 5 (LED) ─────────┼┤
+        GPIO 15 (PWM) ────────┼┤
+        5V ───────────────────┼┤
+        GND ───────────────────┘│
+         │                     │
+         ▼                     └─────────→ [SENSOR ULTRASÓNICO]
+         
+         │
+         ├─────→ GPIO 5 → ╔═════════════════╗
+         │                ║  LED AZUL       ║
+         │                ╠═════════════════╣
+         │                ║ Ánodo (+) ──────┘
+         │           GND←─╫─ Cátodo (−)
+         │                ╚═════════════════╝
+         │
+         └─────→ GPIO 15 → [SERVO MOTOR PWM]
+
+
+┌──────────────────────────────────────────────────────────────────────┐
+│                     FLUJO DE DATOS Y SEÑALES                         │
+└──────────────────────────────────────────────────────────────────────┘
+
+┌─────────┐      Pulsos (10µs)    ┌──────────────┐
+│ ESP32   │──────────GPIO 2────→   │   HC-SR04    │
+│ GPIO 2  │  (TRIG)                │              │  
+│ (TRIG)  │                        │   SENSOR     │
+└─────────┘                        │              │
+                                    └──────────────┘
+                                            ↓
+┌─────────┐      Eco (variable)    ┌──────────────┐
+│ ESP32   │←──────────GPIO 4────    │   HC-SR04    │
+│ GPIO 4  │  (ECHO)                 │              │
+│ (ECHO)  │                         │   SENSOR     │
+└─────────┘                         └──────────────┘
+
+
+┌─────────┐      Encendido/       ┌──────────────┐
+│ ESP32   │      Apagado           │              │
+│ GPIO 5  │────────────────────→   │  LED AZUL    │
+│ (LED)   │    (digitalWrite)      │              │
+└─────────┘                        └──────────────┘
+     ▲
+     │
+ Comandos Serial
+ (ON/OFF/BLINK)
+
+
+┌─────────┐      PWM Signal        ┌──────────────┐
+│ ESP32   │──────────────────────→  │   SERVO      │
+│GPIO 15  │      (mediante         │   MOTOR      │
+│ (PWM)   │      ESP32Servo)        │              │
+└─────────┘                        └──────────────┘
+```
+
+### Tabla Resumida de Conexiones
+
+```
+ESP32 PIN  │  Componente      │  Pin del Componente  │  Color
+───────────┼──────────────────┼──────────────────────┼───────────
+   5V      │  HC-SR04 Sensor  │  VCC                 │  Rojo
+   5V      │  Servo Motor     │  V+                  │  Rojo
+   GND.1   │  Servo Motor     │  GND                 │  Negro
+   GND.2   │  HC-SR04 Sensor  │  GND                 │  Negro
+  GPIO 2   │  HC-SR04 Sensor  │  TRIG                │  Café
+  GPIO 4   │  HC-SR04 Sensor  │  ECHO                │  Naranja
+  GPIO 5   │  LED Azul        │  Ánodo (+)           │  Rojo
+   GND.3   │  LED Azul        │  Cátodo (−)          │  Negro
+ GPIO 15   │  Servo Motor     │  PWM (Señal)         │  Naranja
+```
 
 ---
 
@@ -760,3 +847,57 @@ Muestra la lista de comandos disponibles.
 | GND.3 | Tierra del LED |
 
 ---
+
+## Notas Importantes
+
+### Conflicto de Pines
+- El **GPIO 2 (TRIG)** puede coincidir con otros periféricos. Si hay conflicto, cambiar a **GPIO 13** o **GPIO 14**.
+- Cada pin debe tener una única función.
+
+###  Tiempos y Delays
+- **Medición de distancia**: Se realiza cada **200ms** para no saturar el sistema.
+- **Parpadeo máximo**: Hasta **5000ms** por ciclo.
+- **Servo**: Tarda **1 segundo** en completar el movimiento.
+
+###  Comunicación Serial
+- **Velocidad**: 115200 baud
+- **Formato**: Comandos en mayúsculas, separados por saltos de línea
+- **Monitor Serial**: Usar Arduino IDE o similar para ver mensajes
+
+###  Troubleshooting
+
+| Problema | Causa | Solución |
+|---|---|---|
+| LED no enciende | Pin mal conectado o GPIO incorrecto | Verificar conexión y valor de `LED_PIN` |
+| Sensor no mide | No hay alimentación o pines invertidos | Revisar 5V y GND, TRIG/ECHO correctos |
+| Servo no se mueve | Pin no configurado o sin PWM | Verificar `pinServo` y función `attach()` |
+| comandos no funcionan | Serial desconectado | Verificar conexión USB y baudrate |
+
+
+---
+
+
+---
+
+## Referencias Útiles
+
+- [Documentación oficial de ESP32](https://docs.espressif.com/)
+- [Librería ESP32Servo](https://github.com/jkb-git/ESP32Servo)
+- [Sensor HC-SR04](https://www.alldatasheet.com/datasheet-pdf/pdf/1132188/ELECTRONICSPICES/HC-SR04.html)
+- [Arduino IDE](https://www.arduino.cc/en/software)
+- [Simulador Wokwi](https://wokwi.com/)
+
+---
+
+## Historial de Cambios
+
+| Versión | Fecha | Cambios |
+|---|---|---|
+| 1.0 | 2026-04-09 | Documentación inicial completa con código |
+| - | - | - |
+
+---
+
+**Última actualización:** 9 de Abril de 2026  
+**Autor:** Equipo CasaAutomatizada  
+**Licencia:** MIT
