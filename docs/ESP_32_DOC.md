@@ -17,7 +17,7 @@ Sensor Ultrasónico:
 Servo: Pin 15 (GPIO 15)
 ```
 
- **IMPORTANTE**: Si el LED usa el mismo pin que TRIG (GPIO 2), debes cambiar uno de ellos a GPIO 13 o GPIO 14.
+
 
 #### Configuración de pines y librerías:
 ```cpp
